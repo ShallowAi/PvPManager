@@ -1,5 +1,5 @@
 name: PVPManager
-main: net.saopj.PvPManager
+main: net.saopj.pvpmanager.Main
 version: 1.0.0
 author: [ShallowAi, GlowingBedrock]
 softdepend: [VexView]

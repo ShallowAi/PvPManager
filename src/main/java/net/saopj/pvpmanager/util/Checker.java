@@ -1,4 +1,4 @@
-package net.saopj.PvPManager.util;
+package net.saopj.pvpmanager.util;
 
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;

@@ -1,10 +1,10 @@
-package net.saopj.PvPManager;
+package net.saopj.pvpmanager;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class PvPManager extends JavaPlugin {
-    public static PvPManager ins;
+public class Main extends JavaPlugin {
+    public static Main ins;
 
     // 插件启用操作
     public void onEnable() {
@@ -18,7 +18,7 @@ public class PvPManager extends JavaPlugin {
 
     }
 
-    public static PvPManager getInstance(){
+    public static Main getInstance(){
         return ins;
     }
 

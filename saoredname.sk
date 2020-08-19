@@ -1,0 +1,454 @@
+options:
+	sao: &8[&3&nSAO&8]
+variables:
+	{redname.damage.%player%} = 0
+	{redname.green.%player%} = true
+	{redname.num.tjb} = 0
+	{pvp.%player%} = true
+	{tp.%player%} = 0
+command /redexp [<player>]:
+	permission: Glory.exp
+	trigger:
+		set {_xp3} to (((({lv.lv.%arg-1%} ^ 2) * (60 + ({lv.lv.%arg-1%} * 3))) + 20) * 0.75)
+		set {_xp3} to {_xp3} rounded to 0 decimal place
+		send "%{_xp3}%" to arg-1
+on death of player:
+	if attacker is not victim:
+		if attacker is a player:
+			if {redname.red.%victim%} is set:
+				if {redname.red.%attacker%} is not set:
+					#set {loc.rd.%victim%} to location of victim
+					set {redname.success.%victim%} to true
+					set {_xp3} to (((({lv.lv.%victim%} ^ 2) * (60 + ({lv.lv.%victim%} * 3))) + 20) * 0.14)
+					set {_xp3} to {_xp3} rounded to 0 decimal place
+					remove (((({lv.lv.%victim%} ^ 2) * (60 + ({lv.lv.%victim%} * 3))) + 20) * 0.75) from {lv.exp.%victim%}
+					send "由于你是红名,故额外掉落%(((({lv.lv.%victim%} ^ 2) * (60 + ({lv.lv.%victim%} * 3))) + 20) * 0.75)%点经验." to victim
+					wait 4 ticks
+					set {_dropcoin} to victim's level
+					set {_dropcoin} to ({_dropcoin} * 10)
+					loop all items in victim's inventory:
+						if name of loop-item is "&f1柯尔":
+							set {_onecoin} to number of loop-item in the victim's inventory
+							if {_onecoin} < 1:
+								set {_onecoin} to 0
+						if name of loop-item is "&6&l50柯尔":
+							set {_fiftycoin} to number of loop-item in the victim's inventory
+					if {_onecoin} is not set:
+						set {_onecoin} to 0
+					if {_fiftycoin} is not set:
+						set {_fiftycoin} to 0
+					add ((({_fiftycoin} * 50) + {_onecoin}) * 0.13) to {_dropcoin} 
+					set {_dropcoin} to {_dropcoin} rounded to 0 decimal place
+					set {_fiftycoin} to ({_dropcoin})
+					set {_fiftycoin} to ({_dropcoin} / 50)
+					set {_fiftycoin} to {_fiftycoin} rounded to 0 decimal place
+					set {_onecoin} to ({_dropcoin} - ({_fiftycoin} * 50))
+					set {_onecoin} to {_onecoin} rounded to 0 decimal place
+					execute console command "/di customitems give %attacker% 50柯尔 %{_fiftycoin}%"
+					execute console command "/di customitems give %attacker% 1柯尔 %{_onecoin}%"
+					execute console command "/lv xp add %{_xp3}% %attacker%"
+					send "你获得了%{_xp3}%点经验与%{dropcoin.%victim%}%点柯尔的悬赏." to attacker
+					delete {dropcoin.%victim%}
+					delete {dropexp.%victim%}
+					add 1 to {tjs.%victim%}
+					set {_time} to (7 * {tjs.%victim%})
+					execute console command "/tempban %victim% %{_time}%d"
+					send "{@sao} &b恭喜完成通缉!&c%victim%&b已被你击杀" to attacker
+					broadcast "&8[&3&nSAO&c&n公告&8] &b犯罪指数为&c%{redname.kills.%victim%}%&b的&c%victim%&b已被&e%attacker%&b成功击杀"
+					set {redname.block.%victim%} to true
+					wait 15 ticks
+					delete {redname.red.%victim%}
+					delete {redname.orange.%victim%}
+				else:
+					send "&6红名相残无卵用" to attacker
+					wait 2 seconds
+					delete {dropcoin.%victim%}
+					delete {dropexp.%victim%}
+		else if {redname.red.%victim%} is set:
+			#set {loc.rd.%victim%} to location of victim
+			set {redname.success.%victim%} to true
+			add 1 to {tjs.%victim%}
+			set {_time} to (7 * {tjs.%victim%})
+			execute console command "/tempban %victim% %{_time}%d"
+			set {_jiangjiqian} to {lv.lv.%victim%}
+			mysql update "UPDATE `redname` SET `jiangjiqian` = '%{_jiangjiqian}%' WHERE `redname`.`VarName` = '%victim%'"
+			remove 1 from {lv.lv.%victim%}
+			set {lv.exp.%victim%} to 0
+			send "由于你是红名,故额外降低一级." to victim
+			broadcast "&8[&3&nSAO&c&n公告&8] &b犯罪指数为&c%{redname.kills.%victim%}%&b的&c%victim%&b已经死亡."
+			wait 20 ticks
+			delete {dropcoin.%victim%}
+			delete {dropexp.%victim%}
+			delete {redname.red.%victim%}
+			delete {redname.orange.%victim%}
+			set {redname.block.%victim%} to true
+on respawn:
+	if {redname.block.%player%} is set:
+		wait 3 seconds
+		execute console command "/tp %player% 1480 48 2543"
+		send "&8请在黑铁宫自闭95分钟!(在线时间满后释放)" to player
+		set {redname.block.%player%} to 9.1
+every 10 minute:
+	loop all players:
+		if {redname.block.%loop-player%} > 0:
+			remove 1 from {redname.block.%loop-player%}
+			send "&1你还有(%{redname.block.%loop-player%}% * 10)分钟出狱." to loop-player
+		else if {redname.block.%loop-player%} <= 0:
+			delete {redname.block.%loop-player%}
+			execute console command "/tp %loop-player% 1481 48 2539"
+on death of player:
+	if {lv.lv.%attacker%} >= 1:
+		if attacker is not victim:
+			if {redname.red.%victim%} is not set:
+				if {redname.kills.%attacker%} is not set:
+					set {redname.kills.%attacker%} to 1
+					apply potion of slow 2 to attacker for 3 second
+					apply potion of blindness 2 to attacker for 3 second
+					apply potion of nausea 2 to attacker for 3 second
+					send " " to attacker
+					send " " to attacker
+					send " " to attacker
+					send " " to attacker
+					send " " to attacker
+					set {redname.orange.%attacker%} to true
+					set {redname.o.time.%attacker%} to 200
+					send "{@sao} &c&n第一次杀人,感觉如何?" to attacker
+				else if {redname.kills.%attacker%} >= 3:
+					set {redname.red.%attacker%} to true
+					delete {redname.kills.%attacker%}
+					delete {redname.green.%attacker%}
+					send "{@sao} &c&n现在你的名字已经被鲜血染红了!" to attacker
+				else if {redname.kills.%attacker%} >= 1:
+					add 1 to {redname.kills.%attacker%}
+					set {redname.orange.%attacker%} to true
+					set {redname.o.time.%attacker%} to 200
+					send "{@sao} &c&n这是第&4%{redname.kills.%attacker%}%&c&n个死在你手下的人" to attacker
+					wait 60 ticks
+					send "{@sao} &c你已成为橙名玩家,打开菜单可查看犯罪信息" to attacker
+					wait 60 ticks
+					send "{@sao} &c你的初始犯罪值达到50或再杀一人即成红名." to attacker
+				else if {redname.kills.%attacker%} >= 2:
+					if {redname.orange.%attacker%} is set:
+						set {redname.red.%attacker%} to true
+						delete {redname.kills.%attacker%}
+						delete {redname.green.%attacker%}
+						send "{@sao} &c&n现在你的名字已经被鲜血染红了!" to attacker
+on damage:
+	if {redname.red.%attacker%} is set:
+		if {%victim%_stats.health} is set:
+			if {pvp.stats.%victim%} is not set:
+				cancel event
+				
+on damage:
+	if {pvp.stats.%attacker%} is not set:
+		if victim is player:
+			if {lv.lv.%attacker%} > 1:
+				if victim is not attacker:
+					if {pvp.stats.%victim%} is set:
+						if {redname.red.%victim%} is not set:
+							if {redname.orange.%victim%} is not set:
+								if {redname.damage.%attacker%} is not set:
+									if {redname.block.%attacker%} is not set:
+										if {redname.orange.%attacker%} is not set:
+											set {redname.damage.%attacker%} to 1
+											send "{@sao} &c你打到了绿名玩家,或许你不是故意的?" to attacker
+										if {redname.orange.%attacker%} is set:
+											set {redname.damage.%attacker%} to 0.5
+											send "{@sao} &c你打到了非红名玩家,或许你不是故意的?" to attacker
+							else:
+								if {redname.orange.%attacker%} is not set:
+									add 1 to {redname.damage.%attacker%}
+									send "{@sao} &c你打到了绿名玩家,你当前初始犯罪值为%{redname.damage.%attacker%}%" to attacker
+									if {redname.damage.%attacker%} > 3:
+										if {pvp.stats.%attacker%} is not set:
+											if attacker's tool's lore contains "攻击速度":
+												send "&c安全区内请放下武器" to attacker
+												cancel event
+									if {redname.damage.%attacker%} = 10:
+										if {redname.o.time.%attacker%} is not set:
+											set {redname.o.time.%attacker%} to 200
+											delete {redname.green.%attacker%}
+											set {redname.orange.%attacker%} to true
+											send "{@sao} &c你已成为橙名玩家,打开菜单可查看犯罪信息" to attacker
+											wait 60 ticks
+											send "{@sao} &c你的初始犯罪值达到50或杀死两人即成红名." to attacker
+								if {redname.orange.%attacker%} is not set:
+									add 0.3 to {redname.damage.%attacker%}
+									send "{@sao} &c你打到了非红名玩家,你当前初始犯罪值为%{redname.damage.%attacker%}%" to attacker
+					else:
+						cancel event
+						send "&c安全区内不能pvp" to attacker
+						if attacker's tool's lore contains "攻击速度":
+							send "&c安全区内请放下武器" to attacker
+						if {pvp.stats.%attacker%} is not set:
+							delete {pvp.stats.%attacker%}
+							send "{@sao} &b你已进入保护区" to attacker
+						if {redname.red.%victim%} is not set:
+							if {redname.orange.%victim%} is not set:
+								if {redname.damage.%attacker%} is not set:
+									if {redname.orange.%attacker%} is not set:
+										set {redname.damage.%attacker%} to 1
+										send "{@sao} &c你打到了绿名玩家,或许你不是故意的?" to attacker
+								else:
+									if {redname.orange.%attacker%} is not set:
+										add 1 to {redname.damage.%attacker%}
+										send "{@sao} &c你打到了绿名玩家,或许你不是故意的?" to attacker
+										if {redname.damage.%attacker%} > 6:
+											if {pvp.stats.%attacker%} is not set:
+												set {_pvp} to (20 - {redname.damage.%attacker%})
+												send "{@sao} &c你打到了绿名玩家,你还差%{_pvp}%初始犯罪值成为橙名玩家." to attacker
+										if {redname.damage.%attacker%} >= 20:
+											if {redname.o.time.%attacker%} is not set:
+												set {redname.o.time.%attacker%} to 200
+												delete {redname.green.%attacker%}
+												set {redname.orange.%attacker%} to true
+												send "{@sao} &c你已成为橙名玩家,打开菜单可查看犯罪信息" to attacker
+												wait 60 ticks
+												send "{@sao} &c你的初始犯罪值达到50或杀死两人即成红名." to attacker
+											else:
+												add 1 to {redname.damage.%attacker%}
+												send "{@sao} &c你的初始犯罪值达到50或杀死两人即成红名." to attacker
+												if {redname.damage.%attacker%} >= 50:
+													set {redname.red.%attacker%} to true
+													delete {redname.kills.%attacker%}
+													delete {redname.o.time.%attacker%}
+													delete {redname.orange.%attacker%}
+													set {redname.kills.%attacker%} to 2
+													send "{@sao} &c&n现在你的名字已经被鲜血染红了!" to attacker
+on death of player:
+	if {lv.lv.%attacker%} is set:
+		if {redname.red.%victim%} is set:
+			if {redname.success.%victim%} is not set:
+				set {redname.success.%victim%} to true
+command /redon [<player>]:
+	trigger:	
+		set {redname.red.%arg-1%} to true
+		delete {redname.kills.%arg-1%}
+		delete {redname.o.time.%arg-1%}
+		delete {redname.orange.%arg-1%}
+		set {redname.kills.%arg-1%} to 2
+		send "{@sao} &c&n现在你的名字已经被鲜血染红了!" to arg-1
+command /redquxiao [<player>]:
+	trigger:	
+		delete {redname.red.%arg-1%}
+		delete {redname.orange.%arg-1%}
+		set {redname.green.%arg-1%} to true
+command /rednametjb [<num>]:
+	trigger:
+		wait 2 ticks
+		open chest with 6 rows named "" to player
+		format slot 0 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 1 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 2 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 3 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 4 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 5 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 6 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 7 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		format slot 8 of player with white glass named "&0 " to run [make player execute command "/rednametjbgui"]
+		set {_loop} to 0
+		set {_arg1} to arg-1
+		set {_xz} to (45 * {_arg1})
+		if arg-1 is 0:
+			loop {redname.num.tjb} times:
+				add 1 to {_loop}
+				set {_loop2} to ({_loop} + 8)
+				wait 5 ticks
+				set {redname.money.%{redname.tjp.%{_loop}%}%} to (({redname.kills.%{redname.tjp.%{_loop}%}%} * (2 + {redname.kills.%{redname.tjp.%{_loop}%}%})) + {redname.kills.%{redname.tjp.%{_loop}%}%})
+				if {redname.success.%{redname.tjp.%{_loop}%}%} is not set:
+					format slot {_loop2} of player with player head named "&8[&c%{redname.tjp.%{_loop}%}%&8]" with lore "&3&m------------------------||&8[ &c罪恶指数: &e%{redname.kills.%{redname.tjp.%{_loop}%}%}% &8]||&8[ &e玩家等级: &c%{lv.lv.%{redname.tjp.%{_loop}%}%}%&8]||&3&m------------------------" to run [make player execute command "/rednametjbgui"]
+				#else:
+					#format slot {_loop2} of player with wither skeleton head named "&8[&c&m%{redname.tjp.%{_loop}%}%&8] &7(&4已讨伐&7)" with lore "&3&m------------------------||&8[ &c&m罪恶指数:&e&m %{redname.kills.%{redname.tjp.%{_loop}%}%}% &8]||&8[ &e&m悬赏价格:&c&m %{redname.money.%{redname.tjp.%{_loop}%}%}%&8]||&3&m------------------------" to run [make player execute command "/rednametjbgui"]
+		else if {redname.num.tjb} <= {_xz}:
+			set {_sz} to ({redname.num.tjb} - (45 * {_arg1}))
+			if {_sz} >= 0:
+				loop {redname.num.tjb} times:
+					add 1 to {_loop}
+					set {_loop2} to ({_loop} + 8)
+					wait 5 ticks
+					set {redname.money.%{redname.tjp.%{_loop}%}%} to (({redname.kills.%{redname.tjp.%{_loop}%}%} * (2 + {redname.kills.%{redname.tjp.%{_loop}%}%})) + {redname.kills.%{redname.tjp.%{_loop}%}%})
+				if {redname.success.%{redname.tjp.%{_loop}%}%} is not set:
+					format slot {_loop2} of player with player head named "&8[&c%{redname.tjp.%{_loop}%}%&8]" with lore "&3&m------------------------||&8[ &c罪恶指数: &e%{redname.kills.%{redname.tjp.%{_loop}%}%}% &8]||&8[ &e玩家等级: &c%{lv.lv.%{redname.tjp.%{_loop}%}%}%&8]||&3&m------------------------" to run [make player execute command "/rednametjbgui"]
+				#else:
+					#format slot {_loop2} of player with wither skeleton head named "&8[&c&m%{redname.tjp.%{_loop}%}%&8] &7(&4已讨伐&7)" with lore "&3&m------------------------||&8[ &c&m罪恶指数:&e&m %{redname.kills.%{redname.tjp.%{_loop}%}%}% &8]||&8[ &e&m悬赏价格:&c&m %{redname.money.%{redname.tjp.%{_loop}%}%}%&8]||&3&m------------------------" to run [make player execute command "/rednametjbgui"]
+		else if {redname.num.tjb} > {_xz}:
+			loop {_xz} times:
+				add 1 to {_loop}
+				set {_loop2} to ({_loop} + 8)
+				set {_loop1} to ({_xz} + {_loop})
+				set {_loop3} to ({redname.num.tjb} - {_loop1})
+				wait 5 ticks
+				if {redname.success.%{redname.tjp.%{_loop}%}%} is not set:
+					set {redname.money.%{redname.tjp.%{_loop3}%}%} to (({redname.kills.%{redname.tjp.%{_loop3}%}%} * (2 + {redname.kills.%{redname.tjp.%{_loop3}%}%})) + {redname.kills.%{redname.tjp.%{_loop3}%}%})
+				
+					format slot {_loop2} of player with player head named "&8[&c%{redname.tjp.%{_loop3}%}%&8]" with lore "&3&m------------------------||&8[ &c罪恶指数: &e%{redname.kills.%{redname.tjp.%{_loop3}%}%}% &8]||&8[ &e玩家等级: &c%{lv.lv.%{redname.tjp.%{_loop3}%}%}%&8]||&3&m------------------------" to run [make player execute command "/rednametjbgui"]
+				#else:
+					#format slot {_loop2} of player with wither skeleton head named "&8[&c&m%{redname.tjp.%{_loop3}%}%&8] &7(&4已讨伐&7)" with lore "&3&m------------------------||&8[ &c&m罪恶指数:&e&m %{redname.kills.%{redname.tjp.%{_loop3}%}%}% &8]||&8[ &e&m悬赏价格:&c&m %{redname.money.%{redname.tjp.%{_loop3}%}%}%&8]||&3&m------------------------" to run [make player execute command "/rednametjbgui"]
+command /ptp [<player>] [<num>] [<num>] [<num>] [<text>]:
+	permission: saoptp.admin
+	trigger:
+		if arg-1's tool's lore contains "攻击伤害":
+			send "{@sao} &c手持武器无法进出安全区" to arg-1
+		else:
+			if arg-5 is "true":
+				if {pvplq.%arg-1%} is not set:
+					set {pvp.stats.%arg-1%} to true
+					set {daguai.stats.%arg-1%} to true
+					execute console command "/tp %arg-1% %arg-2% %arg-3% %arg-4%"
+					apply potion of regeneration 9999 to arg-1 for 10 second
+					apply potion of resistance 9999 to arg-1 for 10 second
+					set {pvplq.%arg-1%} to true
+					send "{@sao} &b你已离开保护区,&c可以自由PVP!注意周围!" to arg-1
+					wait 200 ticks
+					delete {pvplq.%arg-1%}
+				else:
+					send "&c请不要频繁进出城门." to arg-1
+					wait 200 ticks
+					delete {pvplq.%arg-1%}
+			else if arg-5 is "daguai":
+				set {daguai.stats.%arg-1%} to true
+				if {pvp.stats.%arg-1%} is set:
+					delete {pvp.stats.%arg-1%}
+				execute console command "/tp %arg-1% %arg-2% %arg-3% %arg-4%"
+				send "{@sao} &b已被允许打怪!" to arg-1
+			else if arg-5 is "false":
+				if {pvplq.%arg-5%} is not set:
+					if {redname.red.%arg-1%} is not set:
+						delete {pvp.stats.%arg-1%}
+						execute console command "/tp %arg-1% %arg-2% %arg-3% %arg-4%"
+						set {pvplq.%arg-1%} to true
+						send "{@sao} &b你已进入保护区,你将不会受到其他玩家的伤害" to arg-1
+						if {daguai.stats.%arg-1%} is set:
+							delete {daguai.stats.%arg-1%}
+							send "{@sao} &c打怪状态关闭" to arg-1
+						wait 200 ticks
+						delete {pvplq.%arg-1%}
+					else:
+						send "{@sao} &c红名玩家无法进入保护圈" to arg-1
+				else:
+					send "&c请不要频繁进出保护圈." to arg-1	
+
+command /rednameadmin [<text>] [<player>]:
+	permission: saoredname.admin
+	trigger:						
+		if arg-1 is "red":
+			delete {redname.orange.%arg-2%}
+			delete {redname.green.%arg-2%}
+			set {redname.red.%arg-2%} to true
+			set {redname.kills.%arg-2%} to 5
+		else if arg-1 is "orange":
+			delete {redname.red.%arg-2%}
+			set {redname.orange.%arg-2%} to true
+			delete {redname.green.%arg-2%}
+		else if arg-1 is "green":
+			delete {redname.red.%arg-2%}
+			delete {redname.orange.%arg-2%}
+			delete {redname.kills.%arg-2%}
+			set {redname.green.%arg-2%} to true
+		else if arg-1 is "damage":
+			delete {redname.damage.%arg-2%}
+			delete {redname.green.%arg-2%}
+		else if arg-1 is "kill":
+			delete {redname.kills.%arg-2%}
+		else if arg-1 is "killa":
+			add 1 to {redname.kills.%arg-2%}
+		else if arg-1 is "killad":
+			add 10 to {redname.kills.%arg-2%}
+		else if arg-1 is "killadd":
+			add 100 to {redname.kills.%arg-2%}
+		else if arg-1 is "killaddd":
+			add 1000 to {redname.kills.%arg-2%}
+		else if arg-1 is "killd":
+			remove 1 from {redname.kills.%arg-2%}
+		else if arg-1 is "killde":
+			remove 10 from {redname.kills.%arg-2%}
+		else if arg-1 is "killdel":
+			remove 100 from {redname.kills.%arg-2%}
+		else if arg-1 is "tjr":
+			set {redname.num.tjb} to 0
+		else if arg-1 is "tjb":
+			set {_num} to 0
+			loop all players:
+				if {redname.red.%loop-player%} is set:
+					if {redname.tj.%loop-player%} is not set:
+						add 1 to {redname.num.tjb}
+						set {redname.tj.%loop-player%} to true
+						set {redname.tjp.%{redname.num.tjb}%} to loop-player
+						add 1 to {_num}
+			wait 10 ticks
+			broadcast "&8[&3&nSAO&8] &c本次新收录&e%{_num}%&c名红名玩家,当前共有&e%{redname.num.tjb}%&c名"
+command /rednameinfo:
+	trigger:
+		if {redname.red.%player%} is not set:
+			if {redname.orange.%player%} is set:
+				set line 2 of lore of slot 23 of player's current inventory to "&8[&6%player%&8] &b共攻击绿名玩家&e%{redname.damage.%player%}%&b次"
+				set line 3 of lore of slot 23 of player's current inventory to "&b你的橙名将在 &e%{redname.o.time.%player%}%分钟 &b后消除"
+			else if {redname.kills.%player%} <= 4:
+				set line 2 of lore of slot 23 of player's current inventory to "&8[&7%player%&8] &b共击杀绿名玩家&e%{redname.kills.%player%}%&b次"
+				set line 3 of lore of slot 23 of player's current inventory to "&c你已经击杀过绿名玩家了!"
+			else if {redname.black.%player%} is true:
+				set line 2 of lore of slot 23 of player's current inventory to "&c请在黑铁宫反思..."
+				set line 3 of lore of slot 23 of player's current inventory to "&c你已经是黑名玩家了"
+			else if {redname.green.%player%} is true:
+				set line 2 of lore of slot 23 of player's current inventory to "&8[&a%player%&8] &b共对绿名玩家造成伤害&e%{redname.damage.%player%}%&b次"
+				set line 3 of lore of slot 23 of player's current inventory to "&a你还没有过犯罪记录"
+		else if {redname.red.%player%} is true:
+			set line 2 of lore of slot 23 of player's current inventory to "&8[&4%player%&8] &b共击杀绿名玩家&e%{redname.kills.%player%}%&b次"
+			set line 3 of lore of slot 23 of player's current inventory to "&c你已经是红名玩家了"
+			
+command /redname:
+	trigger:
+		send "&7&m=-----=-----=&8 [ &bRedName&8 ] &7&m=-----=-----=" to player
+		send "" to player
+		if {redname.red.%player%} is not set:
+			if {redname.orange.%player%} is set:
+				send "&c你已经是橙名玩家了" to player
+				send "&8[&6%player%&8] &b共攻击绿名玩家&e%{redname.damage.%player%}%&b次" to player
+				send "&b你的橙名将在 &e%{redname.o.time.%player%}%m &b后消除" to player
+			else if {redname.kills.%player%} <= 4:
+				send "&c你已经击杀过绿名玩家了!" to player
+				send "&8[&7%player%&8] &b共击杀绿名玩家&e%{redname.kills.%player%}%&b次" to player
+			else if {redname.green.%player%} is true:
+				send "&a你还没有过犯罪记录" to player
+				send "&8[&a%player%&8] &b共对绿名玩家造成伤害&e%{redname.damage.%player%}%&b次" to player
+			else if {redname.black.%player%} is true:
+				send "&c你已经是黑名玩家了" to player
+				send "&8[&4%player%&8] &c请在黑铁宫反思..." to player
+		else if {redname.red.%player%} is true:
+			send "&c你已经是红名玩家了" to player
+			send "&8[&4%player%&8] &b共击杀绿名玩家&e%{redname.kills.%player%}%&b次" to player
+		send "" to player
+		send "          &8[&6SAOPJ工程组&4&l原创&8]" to player
+		send "&7&m=-----=-----=&8 [ &bRedName&8 ] &7&m=-----=-----=" to player
+every 1 minute:
+	loop all players:
+		if {redname.o.time.%loop-player%} is set:
+			remove 1 from {redname.o.time.%loop-player%}
+			if {redname.o.time.%loop-player%} <= 0:
+				delete {redname.orange.%loop-player%}
+				delete {redname.damage.%loop-player%}
+				set {redname.green.%loop-player%} to true
+command /block [<num>] [<player>]:
+	permission: saoredname.admin
+	trigger:
+		remove arg-1 from {redname.block.%arg-2%}
+command /red [<player>]:
+	permission: saoredname.admin
+	trigger:
+		delete {redname.red.%arg-1%}
+		delete {redname.orange.%arg-1%}
+on command "/test1":
+	if sender is a op:
+		set {redname.num.tjb} to 1
+every 5 minute:
+	set {_num} to 0
+	loop all players:
+		if {redname.red.%loop-player%} is set:
+			if {redname.tj.%loop-player%} is not set:
+				add 1 to {redname.num.tjb}
+				set {redname.tj.%loop-player%} to true
+				set {redname.tjp.%{redname.num.tjb}%} to loop-player
+				add 1 to {_num}
+	wait 10 ticks
+	if {_num} >= 1:
+		broadcast "&8[&3&nSAO&8] &c本次新收录&e%{_num}%&c名红名玩家,当前共有&e%{redname.num.tjb}%&c名"
