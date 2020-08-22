@@ -55,7 +55,6 @@ public class Checker implements Listener {
                 } else {
                     List<String> evilInfo = evilPlayers.get(puuid);
                     if (Integer.parseInt(evilInfo.get(0)) > 3){ evilInfo.set(0, "3"); }
-                    
                 }
             }
         }
