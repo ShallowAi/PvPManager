@@ -1,7 +1,6 @@
 package net.saopj.pvpmanager;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import net.saopj.pvpmanager.util.*;
@@ -14,7 +13,7 @@ public class Main extends JavaPlugin {
     // 插件启用操作
     public void onEnable() {
         saveDefaultConfig();
-        saveDefaultFile("saves.yml");
+        saveDefaultFile("save.yml");
         reloadConfig();
         Bukkit.getPluginManager().registerEvents(new Checker(), this);
         Bukkit.getLogger().info("PVP 管理插件已启动.");
@@ -34,7 +33,7 @@ public class Main extends JavaPlugin {
     }
 
     public File getSaveFile() {
-        return new File(getDataFolder(), "saves.yml");
+        return new File(getDataFolder(), "save.yml");
     }
 
     public static Main getInstance(){
