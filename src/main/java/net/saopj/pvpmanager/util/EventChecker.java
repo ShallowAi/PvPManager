@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Date;
 
-public class Checker implements Listener {
+public class EventChecker implements Listener {
 
     long duration_red; // 红名类罪行通缉持续时间
     long duration_orange; // 橙名类罪行通缉持续时间
@@ -28,7 +28,7 @@ public class Checker implements Listener {
     File saveFile;
     Main ins;
 
-    public Checker() {
+    public EventChecker() {
         this.ins = Main.getInstance();
         this.saveFile = ins.getSaveFile();
         this.saveYaml = YamlConfiguration.loadConfiguration(saveFile);
