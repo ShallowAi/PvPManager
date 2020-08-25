@@ -6,6 +6,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import net.saopj.pvpmanager.Main;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,6 +27,7 @@ public class Runnable extends BukkitRunnable {
         Date time = new Date();
         Map<String, List<String>> evilPlayers = (Map<String, List<String>>) saveYaml.get("evilPlayer");
         List<String> needRemove = new ArrayList<String>();
+        boolean needSave = false;
         for (String puuid:evilPlayers.keySet()) {
             if (Long.parseLong(evilPlayers.get(puuid).get(1)) <= time.getTime()) {
                 needRemove.add(puuid);
@@ -33,6 +35,16 @@ public class Runnable extends BukkitRunnable {
         }
         for (String puuid:needRemove) {
             evilPlayers.remove(puuid);
+            needSave = true;
         }
+        if (needSave) {
+            saveYaml.set("evilPlayers",evilPlayers);
+            saveSaveFile();
+            needSave = false;
+        }
+    }
+
+    public void saveSaveFile() {
+        try { saveYaml.save(saveFile); } catch (IOException e){}
     }
 }
