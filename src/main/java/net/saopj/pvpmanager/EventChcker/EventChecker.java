@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Date;
 
 public class EventChecker implements Listener {
 
@@ -53,44 +52,50 @@ public class EventChecker implements Listener {
     // 实体被另外一个实体攻击事件
     @EventHandler
     public void onDamage(EntityDamageByEntityEvent e){
-        Damageable victim = (Damageable)e.getEntity();
-        Date time = new Date();
-        if(victim.getType() == EntityType.PLAYER && e.getDamager().getType() == EntityType.PLAYER) {
+        if(e.getEntity().getType() == EntityType.PLAYER && e.getDamager().getType() == EntityType.PLAYER) {
+            Player victim = (Player)e.getEntity();
+            String vuuid = victim.getUniqueId().toString();
             Player damager = (Player) e.getDamager();
-            String puuid = damager.getUniqueId().toString();
+            String duuid = damager.getUniqueId().toString();
             // 判断是否是致命一击
             if(e.getFinalDamage() >= victim.getHealth()) {
-                if (evilPlayers.containsKey(puuid)) {
-                    List<String> evilInfo = evilPlayers.get(puuid);
+                if (evilPlayers.containsKey(duuid)) {
+                    List<String> evilInfo = evilPlayers.get(duuid);
                     evilInfo.set(0, "2");
                     evilInfo.set(1, String.valueOf(duration_red));
                     evilInfo.add("0"); // 0为不在监狱，1为在监狱
-                    evilPlayers.replace(puuid, evilInfo);
+                    evilPlayers.replace(duuid, evilInfo);
                     damager.sendMessage("你的名字已经被鲜血染红！");
                 } else {
                     List<String> evilInfo = new ArrayList<String>();
                     evilInfo.add("2"); // 这里是罪行等级
                     evilInfo.add(String.valueOf(duration_red)); // 这里是解除时间
                     evilInfo.add("0"); // 0为不在监狱，1为在监狱
-                    evilPlayers.put(damager.getUniqueId().toString(), evilInfo);
+                    evilPlayers.put(duuid, evilInfo);
                     damager.sendMessage("你的罪行使你的通缉时间刷新");
                 }
                 permManger.playerAddGroup(damager, redNameGroupName);
+
+                if (evilPlayers.containsKey(vuuid) && evilPlayers.get(vuuid).get(0) == "2") {
+                    victim.teleport(prison_in);
+                    victim.sendMessage("由于你是红名玩家，所以被玩家击杀后在黑铁宫监禁一段时间");
+                }
             } else {
-                if (evilPlayers.containsKey(puuid)) {
-                    List<String> evilInfo = evilPlayers.get(puuid);
-                    if (Integer.parseInt(evilInfo.get(0)) == 2){
+
+                if (evilPlayers.containsKey(duuid)) {
+                    List<String> evilInfo = evilPlayers.get(duuid);
+                    if (evilInfo.get(0) == "2"){
                         evilInfo.set(1, String.valueOf(duration_red)); // 刷新通缉时间
                     } else {
                         evilInfo.set(1, String.valueOf(duration_orange));
                         permManger.playerAddGroup(damager, orangeNameGroupName);
                     }
-                    evilPlayers.replace(puuid, evilInfo);
+                    evilPlayers.replace(duuid, evilInfo);
                 } else {
                     List<String> evilInfo = new ArrayList<String>();
                     evilInfo.add("1"); // 这里是罪行等级
                     evilInfo.add(String.valueOf(duration_orange)); // 这里是解除时间,没写完
-                    evilPlayers.put(damager.getUniqueId().toString(), evilInfo);
+                    evilPlayers.put(duuid, evilInfo);
                     permManger.playerAddGroup(damager ,orangeNameGroupName);
                 }
             }
