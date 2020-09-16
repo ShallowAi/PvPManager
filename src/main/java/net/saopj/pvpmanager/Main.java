@@ -1,15 +1,15 @@
 package net.saopj.pvpmanager;
 
+import net.saopj.pvpmanager.CommandHander.CommandHander;
 import net.saopj.pvpmanager.EventChcker.EventChecker;
-import net.saopj.pvpmanager.Runnable.AutoSaveRunnable;
-import net.saopj.pvpmanager.Runnable.MainRunnable;
+import net.saopj.pvpmanager.File.MyFile;
+import net.saopj.pvpmanager.Runnables.AutoSaveRunnable;
+import net.saopj.pvpmanager.Runnables.MainRunnable;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.io.IOException;
 
 public class Main extends JavaPlugin {
 
@@ -17,26 +17,20 @@ public class Main extends JavaPlugin {
 
     public MainRunnable mainRunnable;
     public AutoSaveRunnable autoSaveRunnable;
-    public File saveFile;
-    public FileConfiguration config;
-    public FileConfiguration saveYaml;
+    public MyFile saveFile;
+    public MyFile config;
 
     // 插件启用操作
     public void onEnable() {
         saveDefaultConfig();
         saveDefaultFile("save.yml");
         reloadConfig();
-        this.saveFile = getSaveFile();
-        this.saveYaml = YamlConfiguration.loadConfiguration(saveFile);
-        Bukkit.getPluginManager().registerEvents(new EventChecker(), this);
-        this.config = getConfig();
-        this.mainRunnable = new MainRunnable(
-                config.getLong("MainRunnablePeriod", 20L),
-                config,
-                saveFile,
-                saveYaml
-        );
-        this.autoSaveRunnable = new AutoSaveRunnable(saveFile,saveYaml);
+        this.saveFile = new MyFile(getDataFolder(), "save.yml");
+        Bukkit.getPluginManager().registerEvents(new EventChecker(config, saveFile), this);
+        Bukkit.getPluginCommand("pvpmanger").setExecutor(new CommandHander(saveFile, config));
+        this.config = new MyFile(getDataFolder(), "config.yml");
+        this.mainRunnable = new MainRunnable(config, saveFile);
+        this.autoSaveRunnable = new AutoSaveRunnable(saveFile);
         mainRunnable.runTaskTimerAsynchronously(this,0L,config.getLong("MainRunnablePeriod", 20L));
         autoSaveRunnable.runTaskTimer(this, 0L,config.getLong("AutoRunnablePeriod",12000L)); // 默认10分钟一次自动存档
         Bukkit.getLogger().info("PVP 管理插件已启动.");
@@ -44,11 +38,7 @@ public class Main extends JavaPlugin {
 
     // 插件禁用操作
     public void onDisable() {
-        try {
-            saveYaml.save(saveFile);
-        } catch (IOException e) {
-            Bukkit.getLogger().info("存档时发生异常！");
-        }
+        saveFile.mySave();
         Bukkit.getLogger().info("PVP 管理插件已关闭");
     }
 
@@ -58,13 +48,5 @@ public class Main extends JavaPlugin {
         if (!f.exists()) {
             saveResource(fn, false);
         }
-    }
-
-    public File getSaveFile() {
-        return new File(getDataFolder(), "save.yml");
-    }
-
-    public static Main getInstance(){
-        return ins;
     }
 }

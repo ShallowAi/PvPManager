@@ -4,6 +4,9 @@ version: 1.0.0
 author: [ShallowAi, GlowingBedrock]
 softdepend: [VexView]
 commands:
-  pvp:
-    description: 查看插件帮助
-    usage: /<command>
+  pvpmanger:
+    description: "PVPManger命令"
+    usage: /pvpmanger
+    aliases: [pm,pvpm]
+    permission: "pvpm.base"
+    permission-message: "权限不足"
