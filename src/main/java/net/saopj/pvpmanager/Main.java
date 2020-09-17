@@ -6,7 +6,6 @@ import net.saopj.pvpmanager.File.MyFile;
 import net.saopj.pvpmanager.Runnables.AutoSaveRunnable;
 import net.saopj.pvpmanager.Runnables.MainRunnable;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;

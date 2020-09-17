@@ -29,16 +29,17 @@ public class MainRunnable extends BukkitRunnable {
         this.defaultGroupName = config.getString("default-group-name","default");
         this.prison_out = new Location(Bukkit.getServer().getWorld(config.getString("prison_world")), config.getIntegerList("prison_out_loc").get(0), config.getIntegerList("prison_out_loc").get(1), config.getIntegerList("prison_out_loc").get(2));
         this.period = config.getLong("MainRunnablePeriod", 20L);
-        this.speed = config.getInt("speed");
+        this.speed = (Float) config.get("speed", 1.25);
     }
 
     @Override
     public void run() {
         Map<String, List<String>> criminals = (Map<String, List<String>>) saveFile.get("Criminals");
         for (String puuid: criminals.keySet()) {
+            if (Bukkit.getPlayer(UUID.fromString(puuid)).isOnline()) break;
             List<String> evilInfo = criminals.get(puuid);
             if (evilInfo.get(2) == "1") {
-                evilInfo.set(1, String.valueOf(Long.parseLong(evilInfo.get(1))-1000L*period/20L*speed));
+                evilInfo.set(1, String.valueOf(Long.parseLong(evilInfo.get(1))-1000L*speed*period/20L));
             } else {
                 evilInfo.set(1, String.valueOf(Long.parseLong(evilInfo.get(1))-1000L*period/20L));
             }
